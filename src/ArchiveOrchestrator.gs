@@ -16,6 +16,48 @@
 // ArchiveOrchestrator
 // ============================================================
 
+function diagFirstFile() {
+  const rootId = getConfig(PROP_KEYS.ROOT_DRIVE_FOLDER_ID);
+  const token = ScriptApp.getOAuthToken();
+  console.log('ROOT_DRIVE_FOLDER_ID = [' + rootId + ']');
+  console.log('الطول: ' + (rootId ? rootId.length : 0));
+
+  // --- الخطوة 1: جلب المجلد الجذر ---
+  console.log('\n━━━ Step 1: GET root folder ━━━');
+  const r1 = UrlFetchApp.fetch(
+    'https://www.googleapis.com/drive/v3/files/' + rootId +
+    '?fields=id,name,mimeType,trashed,driveId',
+    { headers: {Authorization: 'Bearer ' + token},
+      muteHttpExceptions: true });
+  console.log('HTTP ' + r1.getResponseCode());
+  console.log(r1.getContentText().substring(0, 500));
+
+  // --- الخطوة 2: سرد محتوياته ---
+  console.log('\n━━━ Step 2: list children ━━━');
+  const q = "'" + rootId + "' in parents and trashed = false";
+  const r2 = UrlFetchApp.fetch(
+    'https://www.googleapis.com/drive/v3/files?q=' +
+    encodeURIComponent(q) + '&fields=files(id,name)&pageSize=3',
+    { headers: {Authorization: 'Bearer ' + token},
+      muteHttpExceptions: true });
+  console.log('HTTP ' + r2.getResponseCode());
+  console.log(r2.getContentText().substring(0, 500));
+
+  // --- الخطوة 3: محاولة إنشاء مجلد اختباري ---
+  console.log('\n━━━ Step 3: create test folder ━━━');
+  const r3 = UrlFetchApp.fetch(
+    'https://www.googleapis.com/drive/v3/files?fields=id,name',
+    { method: 'post', contentType: 'application/json',
+      headers: {Authorization: 'Bearer ' + token},
+      payload: JSON.stringify({
+        name: '_archiver_test_' + Date.now(),
+        mimeType: 'application/vnd.google-apps.folder',
+        parents: [rootId],
+      }),
+      muteHttpExceptions: true });
+  console.log('HTTP ' + r3.getResponseCode());
+  console.log(r3.getContentText().substring(0, 500));
+}
 
 
 function testDriveRoot() {

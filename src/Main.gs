@@ -63,13 +63,38 @@ function uiGetConfig() {
 
 /**
  * Save a batch of configuration updates and return the validation result.
+ * Normalises certain fields (e.g. extracts Drive folder ID from a URL).
  * @param {!Object<string, string>} updates
  * @return {{ok: boolean, missing: !Array<string>}}
  */
 function uiSaveConfig(updates) {
   assertAuthorized_();
-  updateConfig(updates || {});
+  const clean = normalizeConfigUpdates_(updates || {});
+  updateConfig(clean);
   return validateConfig();
+}
+
+/**
+ * Extract clean IDs from values users commonly paste as full URLs.
+ * @param {!Object<string, string>} updates
+ * @return {!Object<string, string>}
+ * @private
+ */
+function normalizeConfigUpdates_(updates) {
+  const out = {};
+  for (const k in updates) {
+    let v = String(updates[k] == null ? '' : updates[k]).trim();
+    if (k === PROP_KEYS.ROOT_DRIVE_FOLDER_ID) {
+      // يقبل: URL كامل "drive.google.com/drive/folders/ID" أو ID مباشرة
+      const m = v.match(/\/folders\/([A-Za-z0-9_-]{10,})/);
+      if (m) v = m[1];
+      // يقبل أيضاً ?id=ID
+      const m2 = !m && v.match(/[?&]id=([A-Za-z0-9_-]{10,})/);
+      if (m2) v = m2[1];
+    }
+    out[k] = v;
+  }
+  return out;
 }
 
 // ============================================================
