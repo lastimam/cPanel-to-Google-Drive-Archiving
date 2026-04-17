@@ -18,6 +18,22 @@
 
 
 
+function testDriveRoot() {
+  const rootId = getConfig(PROP_KEYS.ROOT_DRIVE_FOLDER_ID);
+  console.log('Root ID المحفوظ: ' + rootId);
+  if (!rootId) { console.error('فارغ!'); return; }
+  const url = 'https://www.googleapis.com/drive/v3/files/' +
+      rootId + '?fields=id,name,mimeType,owners,permissions,trashed';
+  const res = UrlFetchApp.fetch(url, {
+    headers: { Authorization: 'Bearer ' + ScriptApp.getOAuthToken() },
+    muteHttpExceptions: true,
+  });
+  console.log('HTTP ' + res.getResponseCode());
+  console.log(res.getContentText());
+}
+
+
+
 function testDriveWrite() {
   const rootId = getConfig(PROP_KEYS.ROOT_DRIVE_FOLDER_ID);
   console.log('ROOT_DRIVE_FOLDER_ID: ' + rootId);
