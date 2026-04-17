@@ -107,9 +107,11 @@ class DriveArchiver {
   uploadFromCpanel(connector, src, overrideName) {
     const folderId = this.ensureFolderPath(src.folderRelPath);
     const name = sanitizeName(overrideName || src.name);
+    // Drive appProperties محدود بـ 124 بايت لكل زوج (مفتاح+قيمة) UTF-8.
+    // لا نخزّن srcPath هنا لأن المسارات العربية الطويلة تتجاوز الحد؛
+    // المسار الأصلي محفوظ أصلاً في Log Sheet.
     const appProps = {
       sha256:   String(src.sha256 || ''),
-      srcPath:  String(src.relPath || ''),
       srcMtime: String(src.mtime || ''),
     };
 
