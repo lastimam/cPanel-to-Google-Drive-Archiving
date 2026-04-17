@@ -17,6 +17,29 @@
 // ============================================================
 
 
+
+function testDriveWrite() {
+  const rootId = getConfig(PROP_KEYS.ROOT_DRIVE_FOLDER_ID);
+  console.log('ROOT_DRIVE_FOLDER_ID: ' + rootId);
+  if (!rootId) { console.error('لم يُحدَّد مجلد الـ Drive!'); return; }
+  const url = 'https://www.googleapis.com/drive/v3/files?fields=id,name';
+  const res = UrlFetchApp.fetch(url, {
+    method: 'post',
+    contentType: 'application/json',
+    headers: { Authorization: 'Bearer ' + ScriptApp.getOAuthToken() },
+    payload: JSON.stringify({
+      name: '_test_write_' + Date.now(),
+      mimeType: 'application/vnd.google-apps.folder',
+      parents: [rootId],
+    }),
+    muteHttpExceptions: true,
+  });
+  console.log('HTTP ' + res.getResponseCode());
+  console.log(res.getContentText());
+}
+
+
+
 function testDriveApi() {
   const url = 'https://www.googleapis.com/drive/v3/about?fields=user';
   const res = UrlFetchApp.fetch(url, {
