@@ -15,6 +15,17 @@
 // ============================================================
 // ArchiveOrchestrator
 // ============================================================
+function forceReset() {
+  // احذف كل المُشغّلات
+  removeAllTriggers();
+  // أعد الحالة إلى IDLE
+  setConfig(PROP_KEYS.ARCHIVE_STATUS, ARCHIVE_STATUS.IDLE);
+  // امسح أي checkpoint عالق
+  clearCheckpoint();
+  // امسح أي طابور انتظار
+  deleteConfig(PROP_KEYS.PENDING_RETRY_PATHS);
+  console.log('✅ تم إعادة الضبط');
+}
 
 class ArchiveOrchestrator {
   /**
