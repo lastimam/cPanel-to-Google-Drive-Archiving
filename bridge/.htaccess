@@ -1,0 +1,23 @@
+# حماية ملف bridge.php: فرض HTTPS + منع الفهرسة + حجب باقي الملفات
+
+# إجبار HTTPS
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteCond %{HTTPS} !=on
+    RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+</IfModule>
+
+# منع فهرسة المجلد
+Options -Indexes
+
+# منع الوصول إلى أي ملف غير bridge.php
+<FilesMatch "^(?!bridge\.php$).*$">
+    Require all denied
+</FilesMatch>
+
+# ترويسات أمان
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "DENY"
+    Header set Referrer-Policy "no-referrer"
+</IfModule>

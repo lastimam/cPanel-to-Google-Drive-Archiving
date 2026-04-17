@@ -1,0 +1,28 @@
+# Node / clasp
+node_modules/
+.clasp.json
+.clasprc.json
+package-lock.json
+
+# Environment / secrets
+.env
+.env.*
+*.secret
+bridge/.bridge_secret
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs / build
+*.log
+dist/
+build/

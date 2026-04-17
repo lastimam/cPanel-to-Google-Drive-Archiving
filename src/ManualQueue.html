@@ -1,0 +1,120 @@
+<div class="card">
+  <h2><span class="material-icons">pending_actions</span>طابور الملفات الفاشلة</h2>
+  <p class="muted hint">
+    هذه الملفات فشلت أرشفتها وتنتظر تدخلاً يدوياً.
+    يمكنك إعادة المحاولة بنقرة زر — ستُجدوَل في الجلسة القادمة.
+  </p>
+
+  <div class="action-row">
+    <button class="btn btn-primary" type="button" onclick="retrySelected()">
+      <span class="material-icons">replay</span>
+      إعادة محاولة المحدد
+    </button>
+    <button class="btn btn-outlined" type="button" onclick="retryAll()">
+      <span class="material-icons">refresh</span>
+      إعادة محاولة الكل
+    </button>
+    <button class="btn btn-outlined" type="button" onclick="refreshQueue()">
+      <span class="material-icons">sync</span>
+      تحديث
+    </button>
+  </div>
+
+  <div id="queue-container" class="mt-16">
+    <div class="empty-state">
+      <span class="material-icons">hourglass_empty</span>
+      <div>جارٍ التحميل...</div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* =============================================================
+ * ManualQueue panel — wiring
+ * ============================================================= */
+
+function refreshQueue() {
+  gsRun('uiGetPendingManual').then(function(items) {
+    var box = document.getElementById('queue-container');
+    if (!items || items.length === 0) {
+      box.innerHTML =
+        '<div class="empty-state">' +
+        '<span class="material-icons">check_circle</span>' +
+        '<div>لا توجد ملفات في الطابور اليدوي 🎉</div>' +
+        '</div>';
+      return;
+    }
+    var rows = items.map(function(it, i) {
+      return '<tr>' +
+        '<td style="width:32px;"><input type="checkbox" ' +
+          'data-src="' + encodeURIComponent(it.sourcePath) + '"></td>' +
+        '<td class="truncate" title="' + escapeHtml(it.fileName) + '">' +
+          escapeHtml(it.fileName) + '</td>' +
+        '<td>' + formatBytes(it.size) + '</td>' +
+        '<td class="muted truncate" title="' +
+          escapeHtml(it.errorMessage) + '">' +
+          escapeHtml(it.errorMessage || '—') + '</td>' +
+      '</tr>';
+    }).join('');
+
+    box.innerHTML =
+      '<table class="data-table">' +
+      '<thead><tr>' +
+        '<th style="width:32px;">' +
+          '<input type="checkbox" onchange="toggleAll(this)">' +
+        '</th>' +
+        '<th>اسم الملف</th>' +
+        '<th style="width:90px;">الحجم</th>' +
+        '<th>سبب الفشل</th>' +
+      '</tr></thead><tbody>' + rows + '</tbody></table>';
+  }).catch(function(e) {
+    showSnackbar('فشل التحميل: ' + e.message, 'error');
+  });
+}
+
+function toggleAll(cb) {
+  document
+    .querySelectorAll('#queue-container input[type="checkbox"][data-src]')
+    .forEach(function(x) { x.checked = cb.checked; });
+}
+
+function getSelectedPaths() {
+  var boxes = document.querySelectorAll(
+    '#queue-container input[type="checkbox"][data-src]:checked');
+  return Array.prototype.slice.call(boxes).map(function(x) {
+    return decodeURIComponent(x.dataset.src);
+  });
+}
+
+function retrySelected() {
+  var paths = getSelectedPaths();
+  if (paths.length === 0) {
+    showSnackbar('لم تحدد أي ملف', 'error');
+    return;
+  }
+  if (!confirm('إعادة محاولة ' + paths.length + ' ملف؟')) return;
+  showSnackbar('⏳ جارٍ إعادة الجدولة...');
+  gsRun('uiRetryPending', paths).then(function(r) {
+    showSnackbar('✅ أُعيد جدولة ' + (r.queued || 0) + ' ملف', 'success');
+    refreshQueue();
+  }).catch(function(e) {
+    showSnackbar('خطأ: ' + e.message, 'error');
+  });
+}
+
+function retryAll() {
+  if (!confirm('إعادة محاولة كل الملفات الفاشلة؟')) return;
+  showSnackbar('⏳ جارٍ إعادة الجدولة...');
+  gsRun('uiRetryPending', []).then(function(r) {
+    showSnackbar('✅ أُعيد جدولة ' + (r.queued || 0) + ' ملف', 'success');
+    refreshQueue();
+  }).catch(function(e) {
+    showSnackbar('خطأ: ' + e.message, 'error');
+  });
+}
+
+window.refreshQueue  = refreshQueue;
+window.toggleAll     = toggleAll;
+window.retrySelected = retrySelected;
+window.retryAll      = retryAll;
+</script>

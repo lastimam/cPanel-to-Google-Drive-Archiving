@@ -1,0 +1,84 @@
+<script>
+/* =============================================================
+ * Promise wrapper around google.script.run.
+ * Usage:  await gsRun('uiGetConfig');
+ * ============================================================= */
+function gsRun(fnName /* , ...args */) {
+  var args = Array.prototype.slice.call(arguments, 1);
+  return new Promise(function(resolve, reject) {
+    google.script.run
+      .withSuccessHandler(resolve)
+      .withFailureHandler(function(err) {
+        reject(new Error(err && err.message ? err.message : String(err)));
+      })
+      [fnName].apply(null, args);
+  });
+}
+
+/* =============================================================
+ * Snackbar (toast) helper.
+ * kind ∈ 'success' | 'error' | undefined (neutral)
+ * ============================================================= */
+function showSnackbar(msg, kind) {
+  var el = document.getElementById('snackbar');
+  if (!el) return;
+  el.className = 'snackbar' + (kind ? ' ' + kind : '');
+  el.textContent = msg;
+  el.hidden = false;
+  clearTimeout(el._t);
+  el._t = setTimeout(function() { el.hidden = true; }, 3600);
+}
+
+/* =============================================================
+ * Tab switching. Lazy-refreshes dashboard / queue on first show.
+ * ============================================================= */
+document.addEventListener('click', function(ev) {
+  var tab = ev.target.closest ? ev.target.closest('.tab') : null;
+  if (!tab) return;
+  var name = tab.dataset.tab;
+  document.querySelectorAll('.tab').forEach(function(t) {
+    t.classList.toggle('active', t === tab);
+  });
+  document.querySelectorAll('.panel').forEach(function(p) {
+    p.classList.toggle('active', p.id === name + '-panel');
+  });
+  if (name === 'dashboard' && typeof refreshDashboard === 'function') {
+    refreshDashboard();
+  }
+  if (name === 'queue' && typeof refreshQueue === 'function') {
+    refreshQueue();
+  }
+});
+
+/* =============================================================
+ * Formatters
+ * ============================================================= */
+function formatBytes(n) {
+  n = Number(n) || 0;
+  if (n < 1024) return n + ' B';
+  var units = ['KB', 'MB', 'GB', 'TB'];
+  var i = -1, x = n;
+  do { x /= 1024; i++; } while (x >= 1024 && i < units.length - 1);
+  return x.toFixed(1) + ' ' + units[i];
+}
+function formatDate(iso) {
+  if (!iso) return '—';
+  var d = new Date(iso);
+  if (isNaN(d.getTime())) return String(iso);
+  return d.toLocaleString('ar');
+}
+function escapeHtml(s) {
+  var d = document.createElement('div');
+  d.textContent = s == null ? '' : String(s);
+  return d.innerHTML;
+}
+
+/* =============================================================
+ * Initial load sequence (called by window 'load' once DOM is ready)
+ * ============================================================= */
+window.addEventListener('load', function() {
+  if (typeof loadSettings === 'function') loadSettings();
+  if (typeof refreshDashboard === 'function') refreshDashboard();
+  if (typeof refreshQueue === 'function') refreshQueue();
+});
+</script>

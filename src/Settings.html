@@ -1,0 +1,315 @@
+<!-- ===== اتصال cPanel ===== -->
+<div class="card">
+  <h2><span class="material-icons">dns</span>اتصال cPanel (PHP Bridge)</h2>
+
+  <div class="field">
+    <label for="f-bridge-url">رابط Bridge</label>
+    <input class="input" id="f-bridge-url" type="url"
+           data-key="cpanel_bridge_url"
+           placeholder="https://example.com/.archiver-bridge/bridge.php">
+    <p class="hint">المسار الكامل لملف <code>bridge.php</code> بعد رفعه إلى cPanel.</p>
+  </div>
+
+  <div class="field">
+    <label for="f-bridge-secret">سر Bridge</label>
+    <div class="input-row">
+      <input class="input" id="f-bridge-secret" type="password"
+             data-key="cpanel_bridge_secret"
+             placeholder="اتركه فارغاً لعدم التغيير">
+      <button class="btn btn-text" type="button"
+              onclick="togglePwd('f-bridge-secret')">
+        <span class="material-icons">visibility</span>
+      </button>
+    </div>
+    <p class="hint">يجب أن يطابق <code>BRIDGE_SECRET</code> في ملف bridge.php بالضبط.</p>
+  </div>
+
+  <div class="row">
+    <div class="col field">
+      <label for="f-host">خادم cPanel (اختياري)</label>
+      <input class="input" id="f-host" type="text"
+             data-key="cpanel_host" placeholder="example.com:2083">
+    </div>
+    <div class="col field">
+      <label for="f-user">اسم المستخدم (اختياري)</label>
+      <input class="input" id="f-user" type="text" data-key="cpanel_username">
+    </div>
+  </div>
+
+  <div class="field">
+    <label for="f-source-path">المسار المصدر على cPanel</label>
+    <input class="input" id="f-source-path" type="text"
+           data-key="cpanel_source_path"
+           placeholder="/home/user/public_html/uploads">
+    <p class="hint">يجب أن يطابق <code>ALLOWED_ROOT</code> داخل bridge.php.</p>
+  </div>
+
+  <div class="action-row">
+    <button class="btn btn-outlined" type="button" onclick="testConnection()">
+      <span class="material-icons">wifi_tethering</span>
+      اختبار الاتصال
+    </button>
+  </div>
+</div>
+
+<!-- ===== Drive ===== -->
+<div class="card">
+  <h2><span class="material-icons">folder</span>مجلد Drive الهدف</h2>
+  <div class="field">
+    <label for="f-root">معرّف المجلد الرئيسي</label>
+    <input class="input" id="f-root" type="text" data-key="root_drive_folder_id">
+    <p class="hint">
+      افتح المجلد في Google Drive وانسخ المعرّف من الرابط:
+      <code>drive.google.com/drive/folders/<b>ID_HERE</b></code>
+    </p>
+  </div>
+</div>
+
+<!-- ===== سلوك الأرشفة ===== -->
+<div class="card">
+  <h2><span class="material-icons">tune</span>سلوك الأرشفة</h2>
+
+  <div class="switch-row">
+    <label for="f-delete">حذف الملفات من المصدر بعد النقل الناجح</label>
+    <span class="switch">
+      <input type="checkbox" id="f-delete" data-key="source_delete_mode">
+      <span class="switch-track"></span>
+    </span>
+  </div>
+
+  <div class="field">
+    <label for="f-filter">فلتر الامتدادات</label>
+    <input class="input" id="f-filter" type="text"
+           data-key="file_type_filter" placeholder="* أو: jpg,pdf,zip">
+    <p class="hint"><code>*</code> = كل الامتدادات. استخدم فاصلة بين الامتدادات المسموحة.</p>
+  </div>
+
+  <div class="row">
+    <div class="col field">
+      <label for="f-retries">عدد محاولات إعادة التنفيذ</label>
+      <input class="input" id="f-retries" type="number" min="1" max="10"
+             data-key="max_retries">
+      <p class="hint">بين 1 و 10.</p>
+    </div>
+    <div class="col field">
+      <label for="f-bandwidth">حد الاستهلاك (ميغابايت/جلسة)</label>
+      <input class="input" id="f-bandwidth" type="number" min="10"
+             data-key="bandwidth_limit_mb">
+    </div>
+  </div>
+</div>
+
+<!-- ===== الجدولة ===== -->
+<div class="card">
+  <h2><span class="material-icons">schedule</span>الجدولة</h2>
+
+  <div class="row">
+    <div class="col field">
+      <label for="f-freq">التكرار</label>
+      <select class="select" id="f-freq" data-key="schedule_frequency">
+        <option value="HOURLY">كل ساعة</option>
+        <option value="DAILY">يومياً</option>
+        <option value="WEEKLY">أسبوعياً (الأحد)</option>
+      </select>
+    </div>
+    <div class="col field">
+      <label for="f-time">وقت التشغيل (للتكرار اليومي/الأسبوعي)</label>
+      <input class="input" id="f-time" type="time" data-key="schedule_time">
+    </div>
+  </div>
+
+  <div class="action-row">
+    <button class="btn btn-outlined" type="button" onclick="installSchedule()">
+      <span class="material-icons">event_repeat</span>
+      تفعيل الجدولة
+    </button>
+    <button class="btn btn-danger" type="button" onclick="removeAllTriggers()">
+      <span class="material-icons">event_busy</span>
+      إيقاف جميع المُشغّلات
+    </button>
+  </div>
+
+  <div id="triggers-list" class="mt-16"></div>
+</div>
+
+<!-- ===== الإشعارات ===== -->
+<div class="card">
+  <h2><span class="material-icons">notifications</span>الإشعارات</h2>
+
+  <div class="field">
+    <label for="f-email">البريد المستقبل</label>
+    <input class="input" id="f-email" type="email" data-key="notification_email">
+  </div>
+
+  <div class="switch-row">
+    <label for="f-daily">إرسال تقرير يومي (الساعة 7 صباحاً)</label>
+    <span class="switch">
+      <input type="checkbox" id="f-daily" data-key="daily_report_enabled">
+      <span class="switch-track"></span>
+    </span>
+  </div>
+
+  <div class="switch-row">
+    <label for="f-alert">تنبيه فوري عند الفشل</label>
+    <span class="switch">
+      <input type="checkbox" id="f-alert" data-key="alert_on_failure">
+      <span class="switch-track"></span>
+    </span>
+  </div>
+
+  <div class="action-row">
+    <button class="btn btn-outlined" type="button" onclick="testEmail()">
+      <span class="material-icons">mail</span>
+      إرسال بريد اختباري
+    </button>
+  </div>
+</div>
+
+<!-- ===== شريط الحفظ ===== -->
+<div class="card" style="background: var(--primary-container);">
+  <div class="row" style="align-items:center;">
+    <div class="col">
+      <b>حفظ الإعدادات</b>
+      <p class="muted hint">ستُشفَّر الأسرار تلقائياً قبل الحفظ. اترك حقول كلمات السر فارغة لعدم تغييرها.</p>
+    </div>
+    <button class="btn btn-primary" type="button" onclick="saveAllSettings()">
+      <span class="material-icons">save</span>
+      حفظ
+    </button>
+  </div>
+</div>
+
+<script>
+/* =============================================================
+ * Settings panel — wiring
+ * ============================================================= */
+
+function loadSettings() {
+  gsRun('uiGetConfig').then(function(cfg) {
+    document.querySelectorAll('[data-key]').forEach(function(el) {
+      var key = el.dataset.key;
+      var val = cfg[key];
+      if (val === undefined || val === null) return;
+      if (el.type === 'checkbox') {
+        el.checked = String(val) === 'true';
+      } else if (el.type === 'password') {
+        // لا نحقن قيمة السر المُرجعة (مُقنّعة) — نتركه فارغاً
+        el.value = '';
+        el.placeholder = val ? '••••••••  (محفوظ)' : 'اتركه فارغاً';
+      } else {
+        el.value = val;
+      }
+    });
+    listTriggers();
+  }).catch(function(e) {
+    showSnackbar('فشل تحميل الإعدادات: ' + e.message, 'error');
+  });
+}
+
+function saveAllSettings() {
+  var updates = {};
+  document.querySelectorAll('[data-key]').forEach(function(el) {
+    var key = el.dataset.key;
+    if (el.type === 'checkbox') {
+      updates[key] = el.checked ? 'true' : 'false';
+    } else if (el.type === 'password') {
+      // تجاهل حقل فارغ حتى لا نكتب قيمة فارغة فوق السر الموجود
+      if (el.value === '') return;
+      updates[key] = el.value;
+    } else {
+      updates[key] = el.value;
+    }
+  });
+  gsRun('uiSaveConfig', updates).then(function(res) {
+    if (res.ok) {
+      showSnackbar('✅ حُفظت الإعدادات', 'success');
+    } else {
+      showSnackbar('⚠️ حقول ناقصة: ' + (res.missing || []).join(', '),
+                   'error');
+    }
+  }).catch(function(e) {
+    showSnackbar('فشل الحفظ: ' + e.message, 'error');
+  });
+}
+
+function testConnection() {
+  showSnackbar('⏳ جارٍ اختبار الاتصال...');
+  gsRun('uiTestConnection').then(function(r) {
+    if (r.ok) {
+      showSnackbar('✅ الاتصال ناجح — ' + (r.rootCount || 0) +
+                   ' مدخل في الجذر', 'success');
+    } else {
+      showSnackbar('❌ ' + (r.error || 'فشل'), 'error');
+    }
+  }).catch(function(e) {
+    showSnackbar('خطأ: ' + e.message, 'error');
+  });
+}
+
+function testEmail() {
+  showSnackbar('⏳ جارٍ إرسال بريد اختباري...');
+  gsRun('uiTestEmail').then(function(r) {
+    if (r.sent) showSnackbar('✅ أُرسل — تحقق من صندوق الوارد',
+                              'success');
+    else showSnackbar('❌ ' + (r.error || 'فشل'), 'error');
+  }).catch(function(e) {
+    showSnackbar('خطأ: ' + e.message, 'error');
+  });
+}
+
+function installSchedule() {
+  gsRun('uiInstallSchedule').then(function() {
+    showSnackbar('✅ تم تفعيل الجدولة', 'success');
+    listTriggers();
+  }).catch(function(e) {
+    showSnackbar('خطأ: ' + e.message, 'error');
+  });
+}
+
+function removeAllTriggers() {
+  if (!confirm('سيتم حذف جميع المُشغّلات (بما فيها التقارير). متابعة؟')) {
+    return;
+  }
+  gsRun('uiRemoveAllTriggers').then(function() {
+    showSnackbar('✅ حُذفت المُشغّلات', 'success');
+    listTriggers();
+  }).catch(function(e) {
+    showSnackbar('خطأ: ' + e.message, 'error');
+  });
+}
+
+function listTriggers() {
+  gsRun('uiListTriggers').then(function(list) {
+    var el = document.getElementById('triggers-list');
+    if (!list || list.length === 0) {
+      el.innerHTML = '<p class="muted hint">لا توجد مُشغّلات مفعّلة.</p>';
+      return;
+    }
+    el.innerHTML =
+      '<table class="data-table"><thead><tr>' +
+      '<th>الدالة</th><th>النوع</th>' +
+      '</tr></thead><tbody>' +
+      list.map(function(t) {
+        return '<tr><td class="mono">' + escapeHtml(t.handler) +
+               '</td><td>' + escapeHtml(t.eventType) + '</td></tr>';
+      }).join('') +
+      '</tbody></table>';
+  }).catch(function(e) {
+    showSnackbar('فشل جلب المُشغّلات: ' + e.message, 'error');
+  });
+}
+
+function togglePwd(id) {
+  var el = document.getElementById(id);
+  el.type = el.type === 'password' ? 'text' : 'password';
+}
+
+/* اجعل الدوال متاحة عالمياً ليستدعيها onclick inline handlers */
+window.loadSettings       = loadSettings;
+window.saveAllSettings    = saveAllSettings;
+window.testConnection     = testConnection;
+window.testEmail          = testEmail;
+window.installSchedule    = installSchedule;
+window.removeAllTriggers  = removeAllTriggers;
+window.togglePwd          = togglePwd;
+</script>

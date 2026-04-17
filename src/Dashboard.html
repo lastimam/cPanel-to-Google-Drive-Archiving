@@ -1,0 +1,165 @@
+<div class="card">
+  <h2><span class="material-icons">insights</span>حالة النظام</h2>
+
+  <div class="row" style="align-items:center;margin-bottom:8px;">
+    <div class="col">
+      <div class="muted hint">الحالة</div>
+      <div id="dash-status" style="font-size:20px;font-weight:600;">—</div>
+    </div>
+    <div class="col">
+      <div class="muted hint">آخر تشغيل</div>
+      <div id="dash-last-run" style="font-size:14px;">—</div>
+    </div>
+    <div class="col">
+      <div class="muted hint">التشغيل القادم</div>
+      <div id="dash-next-run" style="font-size:14px;">—</div>
+    </div>
+  </div>
+
+  <div class="action-row">
+    <button class="btn btn-primary" type="button" onclick="runNow()">
+      <span class="material-icons">play_arrow</span>
+      تشغيل يدوي الآن
+    </button>
+    <button class="btn btn-outlined" type="button" onclick="refreshDashboard()">
+      <span class="material-icons">refresh</span>
+      تحديث
+    </button>
+  </div>
+</div>
+
+<div class="card">
+  <h2><span class="material-icons">bar_chart</span>إحصاءات آخر 24 ساعة</h2>
+  <div class="kpi-grid">
+    <div class="kpi success">
+      <div class="kpi-value" id="kpi-success">0</div>
+      <div class="kpi-label">نجاح</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-value" id="kpi-versioned">0</div>
+      <div class="kpi-label">إصدار جديد</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-value" id="kpi-skipped">0</div>
+      <div class="kpi-label">مكرر</div>
+    </div>
+    <div class="kpi error">
+      <div class="kpi-value" id="kpi-failed">0</div>
+      <div class="kpi-label">فشل</div>
+    </div>
+    <div class="kpi warning">
+      <div class="kpi-value" id="kpi-pending">0</div>
+      <div class="kpi-label">طابور يدوي</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-value" id="kpi-bytes">0</div>
+      <div class="kpi-label">الحجم المؤرشف</div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h2><span class="material-icons">description</span>روابط مفيدة</h2>
+  <div class="action-row">
+    <a id="link-log" class="btn btn-text" href="#"
+       target="_blank" rel="noopener">
+      <span class="material-icons">table_chart</span>
+      سجل النشاط
+    </a>
+    <a id="link-dedup" class="btn btn-text" href="#"
+       target="_blank" rel="noopener">
+      <span class="material-icons">fingerprint</span>
+      فهرس التكرار
+    </a>
+    <a id="link-drive" class="btn btn-text" href="#"
+       target="_blank" rel="noopener">
+      <span class="material-icons">folder_open</span>
+      مجلد Drive
+    </a>
+  </div>
+</div>
+
+<script>
+/* =============================================================
+ * Dashboard panel — wiring
+ * ============================================================= */
+
+var STATUS_CHIPS = {
+  IDLE:   { cls: 'status-idle',   ico: 'radio_button_unchecked' },
+  ACTIVE: { cls: 'status-active', ico: 'radio_button_checked' },
+  PAUSED: { cls: 'status-paused', ico: 'pause_circle' },
+  ERROR:  { cls: 'status-error',  ico: 'error' },
+};
+
+function refreshDashboard() {
+  gsRun('uiGetDashboardStats').then(function(d) {
+    d = d || {};
+    // ----- Status chip in app bar -----
+    var chip = document.getElementById('status-chip');
+    var lbl  = chip.querySelector('.status-label');
+    var ico  = chip.querySelector('.material-icons');
+    var meta = STATUS_CHIPS[d.status] || STATUS_CHIPS.IDLE;
+    chip.className = 'status-chip ' + meta.cls;
+    lbl.textContent = d.status || 'IDLE';
+    ico.textContent = meta.ico;
+
+    // ----- Header tiles -----
+    document.getElementById('dash-status').textContent = d.status || 'IDLE';
+    document.getElementById('dash-last-run').textContent =
+        formatDate(d.lastRun);
+    document.getElementById('dash-next-run').textContent =
+        d.nextRun ? formatDate(d.nextRun) : '—';
+
+    // ----- KPIs -----
+    var s = d.stats || {};
+    document.getElementById('kpi-success').textContent   = s.success   || 0;
+    document.getElementById('kpi-versioned').textContent = s.versioned || 0;
+    document.getElementById('kpi-skipped').textContent   = s.skipped   || 0;
+    document.getElementById('kpi-failed').textContent    = s.failed    || 0;
+    document.getElementById('kpi-pending').textContent   =
+        s.pendingManual || 0;
+    document.getElementById('kpi-bytes').textContent =
+        formatBytes(s.totalBytes || 0);
+
+    // ----- Queue badge in tab -----
+    var badge = document.getElementById('queue-badge');
+    if ((s.pendingManual || 0) > 0) {
+      badge.textContent = s.pendingManual;
+      badge.hidden = false;
+    } else {
+      badge.hidden = true;
+    }
+
+    // ----- Links -----
+    if (d.logSheetUrl) {
+      document.getElementById('link-log').href = d.logSheetUrl;
+    }
+    if (d.dedupSheetUrl) {
+      document.getElementById('link-dedup').href = d.dedupSheetUrl;
+    }
+    if (d.driveFolderUrl) {
+      document.getElementById('link-drive').href = d.driveFolderUrl;
+    }
+  }).catch(function(e) {
+    showSnackbar('فشل جلب الحالة: ' + e.message, 'error');
+  });
+}
+
+function runNow() {
+  if (!confirm('سيبدأ تشغيل أرشفة يدوية الآن. متابعة؟')) return;
+  showSnackbar('⏳ جارٍ البدء...');
+  gsRun('uiRunNow').then(function(r) {
+    if (r.started) {
+      showSnackbar('✅ بدأ التشغيل', 'success');
+    } else {
+      showSnackbar('⚠️ ' + (r.reason || 'لم يبدأ'), 'error');
+    }
+    setTimeout(refreshDashboard, 2000);
+  }).catch(function(e) {
+    showSnackbar('خطأ: ' + e.message, 'error');
+  });
+}
+
+window.refreshDashboard = refreshDashboard;
+window.runNow           = runNow;
+</script>

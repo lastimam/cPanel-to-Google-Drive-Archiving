@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>cPanel Drive Archiver</title>
+  <base target="_top">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&family=Roboto+Mono:wght@400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <?!= include('Stylesheet'); ?>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="app-bar">
+      <span class="material-icons app-icon">cloud_sync</span>
+      <h1>cPanel Drive Archiver</h1>
+      <span id="status-chip" class="status-chip status-idle">
+        <span class="material-icons">radio_button_unchecked</span>
+        <span class="status-label">IDLE</span>
+      </span>
+    </header>
+
+    <nav class="tab-bar" role="tablist">
+      <button class="tab active" data-tab="dashboard" role="tab">
+        <span class="material-icons">dashboard</span>
+        <span>اللوحة</span>
+      </button>
+      <button class="tab" data-tab="settings" role="tab">
+        <span class="material-icons">settings</span>
+        <span>الإعدادات</span>
+      </button>
+      <button class="tab" data-tab="queue" role="tab">
+        <span class="material-icons">pending_actions</span>
+        <span>الطابور اليدوي</span>
+        <span id="queue-badge" class="badge" hidden>0</span>
+      </button>
+    </nav>
+
+    <main class="app-main">
+      <section id="dashboard-panel" class="panel active" role="tabpanel">
+        <?!= include('Dashboard'); ?>
+      </section>
+      <section id="settings-panel" class="panel" role="tabpanel">
+        <?!= include('Settings'); ?>
+      </section>
+      <section id="queue-panel" class="panel" role="tabpanel">
+        <?!= include('ManualQueue'); ?>
+      </section>
+    </main>
+
+    <footer class="app-footer">
+      cPanel Drive Archiver · v1.0.0
+    </footer>
+
+    <div id="snackbar" class="snackbar" hidden role="status"></div>
+  </div>
+
+  <?!= include('Scripts'); ?>
+</body>
+</html>
