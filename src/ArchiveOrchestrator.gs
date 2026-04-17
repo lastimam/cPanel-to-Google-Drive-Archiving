@@ -15,6 +15,20 @@
 // ============================================================
 // ArchiveOrchestrator
 // ============================================================
+
+
+function testDriveApi() {
+  const url = 'https://www.googleapis.com/drive/v3/about?fields=user';
+  const res = UrlFetchApp.fetch(url, {
+    headers: { Authorization: 'Bearer ' + ScriptApp.getOAuthToken() },
+    muteHttpExceptions: true,
+  });
+  console.log('HTTP ' + res.getResponseCode());
+  console.log(res.getContentText());
+}
+
+
+
 function forceReset() {
   // احذف كل المُشغّلات
   removeAllTriggers();
